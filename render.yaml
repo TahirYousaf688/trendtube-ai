@@ -64,7 +64,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    command: celery -A app.services.tasks.celery_app worker --loglevel=info --concurrency=2
+    dockerCommand: celery -A app.services.tasks.celery_app worker --loglevel=info --concurrency=2
     envVars:
       - key: ENV
         value: production
@@ -95,7 +95,7 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    command: celery -A app.services.tasks.celery_app beat --loglevel=info
+    dockerCommand: celery -A app.services.tasks.celery_app beat --loglevel=info
     envVars:
       - key: ENV
         value: production
