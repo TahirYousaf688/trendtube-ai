@@ -140,9 +140,5 @@ databases:
     databaseName: trendtube
     user: trendtube
 
-# ---------- Redis ----------
-- type: redis
-    name: trendtube-redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
+
 
