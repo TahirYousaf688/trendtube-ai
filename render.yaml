@@ -1,9 +1,24 @@
-# ============================================
-# TrendTube AI - Render Blueprint Deployment
-# ============================================
-
 services:
-  # ---------- FastAPI Backend ----------
+  # ==========================
+  # PostgreSQL Database
+  # ==========================
+  - type: pserv
+    name: trendtube-db
+    plan: free
+    databaseName: trendtube
+    user: trendtube
+
+  # ==========================
+  # Redis
+  # ==========================
+  - type: redis
+    name: trendtube-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  # ==========================
+  # FastAPI Backend
+  # ==========================
   - type: web
     name: trendtube-api
     env: docker
@@ -11,138 +26,155 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
+
     envVars:
       - key: ENV
         value: production
+
       - key: APP_NAME
         value: TrendTube AI
+
       - key: DEBUG
         value: "false"
-      - key: CORS_ORIGINS
-        value: https://trendtube-frontend.onrender.com,https://trendtube-api.onrender.com
+
       - key: LOG_LEVEL
         value: INFO
+
       - key: DATABASE_URL
         fromDatabase:
           name: trendtube-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_BROKER_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_RESULT_BACKEND
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: JWT_SECRET
         generateValue: true
+
       - key: JWT_ALGORITHM
         value: HS256
+
       - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
+
       - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
+
       - key: ALLOWED_HOSTS
-        value: .onrender.com,localhost
+        value: ".onrender.com,localhost"
+
       - key: STORAGE_PROVIDER
         value: local
+
       - key: LOCAL_STORAGE_PATH
         value: ./storage
 
-  # ---------- Celery Worker ----------
+  # ==========================
+  # Celery Worker
+  # ==========================
   - type: worker
-    name: trendtube-celery
+    name: trendtube-worker
     env: docker
     plan: starter
+
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /health
-    dockerCommand: celery -A app.services.tasks.celery_app worker --loglevel=info --concurrency=2
+
+    startCommand: celery -A app.services.tasks.celery_app worker --loglevel=info --concurrency=2
+
     envVars:
-      - key: ENV
-        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: trendtube-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_BROKER_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_RESULT_BACKEND
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
 
-  # ---------- Celery Beat ----------
+  # ==========================
+  # Celery Beat
+  # ==========================
   - type: worker
-    name: trendtube-celery-beat
+    name: trendtube-beat
     env: docker
     plan: starter
+
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: celery -A app.services.tasks.celery_app beat --loglevel=info
+
+    startCommand: celery -A app.services.tasks.celery_app beat --loglevel=info
+
     envVars:
-      - key: ENV
-        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: trendtube-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_BROKER_URL
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
+
       - key: CELERY_RESULT_BACKEND
         fromService:
           type: redis
           name: trendtube-redis
           property: connectionString
 
-  # ---------- Next.js Frontend ----------
+  # ==========================
+  # Next.js Frontend
+  # ==========================
   - type: web
     name: trendtube-frontend
     env: node
     plan: starter
-    buildCommand: npm ci && npm run build
+
+    buildCommand: npm install && npm run build
     startCommand: npm start
+
     healthCheckPath: /
+
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: NEXT_PUBLIC_API_URL
         value: https://trendtube-api.onrender.com/api/v1
-
-# ---------- PostgreSQL Database ----------
-databases:
-  - name: trendtube-db
-    plan: free
-    databaseName: trendtube
-    user: trendtube
-
-# ---------- Redis ----------
-redis:
-  - name: trendtube-redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
 
