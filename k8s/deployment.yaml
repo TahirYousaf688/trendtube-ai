@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trendtube-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trendtube-api
+  template:
+    metadata:
+      labels:
+        app: trendtube-api
+    spec:
+      containers:
+        - name: trendtube-api
+          image: trendtube-ai:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: postgresql+psycopg2://postgres:postgres@postgres:5432/trendtube
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trendtube-api
+spec:
+  selector:
+    app: trendtube-api
+  ports:
+    - port: 80
+      targetPort: 8000
